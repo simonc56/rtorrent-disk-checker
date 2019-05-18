@@ -92,7 +92,7 @@ try:
                         break
 
                 if completed:
-                        t_age, t_label, t_tracker, t_ratio, t_size, t_name, t_hash, t_path, parent_directory = completed[0]
+                        t_age, t_label, t_tracker, t_ratio, t_size_b, t_name, t_hash, t_path, parent_directory = completed[0]
 
                         if override:
                                 override = False
@@ -121,7 +121,7 @@ try:
                                         continue
 
                         if cfg.trackers and not override:
-                                tracker_rule = [rule for rule in cfg.trackers for url in t_tracker if rule in url[0]]
+                                tracker_rule = [tracker for tracker in cfg.trackers for url in t_tracker if tracker in url[0]]
 
                                 if tracker_rule:
                                         tracker_rule = cfg.trackers[tracker_rule[0]]
@@ -141,26 +141,26 @@ try:
 
                         t_age = (current_date - datetime.utcfromtimestamp(t_age)).days
                         t_ratio /= 1000.0
-                        t_size /= 1073741824.0
+                        t_size_g = t_size_b / 1073741824.0
 
-                        if t_age < min_age or t_ratio < min_ratio or t_size < min_size:
+                        if t_age < min_age or t_ratio < min_ratio or t_size_g < min_size:
 
-                                if fb_age is not no and t_age >= fb_age and t_size >= min_size:
-                                        fallback_torrents.append([parent_directory, t_age, t_label, t_tracker, t_size, t_name])
+                                if fb_age is not no and t_age >= fb_age and t_size_g >= min_size:
+                                        fallback_torrents.append([parent_directory, t_age, t_label, t_tracker, t_size_g, t_name])
 
-                                elif fb_ratio is not no and t_ratio >= fb_ratio and t_size >= min_size:
-                                        fallback_torrents.append([parent_directory, t_age, t_label, t_tracker, t_size, t_name])
+                                elif fb_ratio is not no and t_ratio >= fb_ratio and t_size_g >= min_size:
+                                        fallback_torrents.append([parent_directory, t_age, t_label, t_tracker, t_size_g, t_name])
 
                                 del completed[0]
                                 continue
 
                         del completed[0]
                 else:
-                        parent_directory, t_age, t_label, t_tracker, t_size, t_name = fallback_torrents[0]
+                        parent_directory, t_age, t_label, t_tracker, t_size_g, t_name = fallback_torrents[0]
                         del fallback_torrents[0]
 
                 count += 1
-                freed_space += t_size
+                freed_space += t_size_g
                 deleted.append('%s. TA: %s Days Old\n%s. TN: %s\n%s. TL: %s\n%s. TT: %s\n' % (count, t_age, count, t_name, count, t_label, count, t_tracker))
 except Exception as e:
         print(e)
