@@ -10,6 +10,7 @@ torrent_label = sys.argv[2]
 torrent_hash = sys.argv[3]
 torrent_path = sys.argv[4]
 torrent_size = int(sys.argv[5]) / 1073741824.0
+is_meta = True if sys.argv[5] = '1' else False
 
 def imdb_search():
 
@@ -55,7 +56,7 @@ if torrent_label in cfg.imdb:
         minimum_rating, minimum_votes, skip_foreign = cfg.imdb[torrent_label]
         imdb_search()
 
-if cfg.enable_disk_check:
+if cfg.enable_disk_check and not is_meta:
         script_path = os.path.dirname(sys.argv[0])
         queue = script_path + '/queue.txt'
 
