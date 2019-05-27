@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, time, pprint, config as cfg
-from subprocess import Popen
+from subprocess import Popen, check_output
 from datetime import datetime, timedelta
 from remotecaller import xmlrpc
 
@@ -11,6 +11,13 @@ torrent_hash = sys.argv[3]
 torrent_path = sys.argv[4]
 torrent_size = int(sys.argv[5]) / 1073741824.0
 is_meta = True if sys.argv[5] = '1' else False
+
+def disk_usage(path):
+        try:
+                used_k = int(check_output(['du','-s', path]).split()[0])
+        except:
+                used_k = 0
+        return 1024 * used_k
 
 def imdb_search():
 
@@ -104,6 +111,8 @@ if cfg.enable_disk_check and not is_meta:
         emailer = script_path + '/emailer.py'
         mount_point = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if os.path.ismount(path)]
         mount_point = mount_point[0] if mount_point else '/'
+        quota_path = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if path in cfg.maximum_space_quota]
+        quota_path = quota_path[0] if quota_path else False
 
         try:
                 from torrent import downloads
@@ -130,10 +139,13 @@ if cfg.enable_disk_check and not is_meta:
                 unaccounted = 0
 
         disk = os.statvfs(mount_point)
-        available_space = (disk.f_bsize * disk.f_bavail + unaccounted - downloading) / 1073741824.0
+        disk_free = quota_free = disk.f_bsize * disk.f_bavail
+        if quota_path:
+                quota_free = cfg.maximum_space_quota[quota_path] * 1073741824 - disk_usage(quota_path)
+        available_space = (min(disk_free, quota_free) + unaccounted - downloading) / 1073741824.0
         minimum_space = cfg.minimum_space_mp[mount_point] if mount_point in cfg.minimum_space_mp else cfg.minimum_space
         required_space = torrent_size - (available_space - minimum_space)
-        requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.fallback_age, cfg.fallback_ratio
+        requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.minimum_seeders, cfg.fallback_age, cfg.fallback_ratio
         include = override = True
         exclude = mp_updated = no = False
         freed_space = deleted = 0
@@ -149,7 +161,7 @@ if cfg.enable_disk_check and not is_meta:
 
                         if override:
                                 override = False
-                                min_size, min_age, min_ratio, fb_age, fb_ratio = requirements
+                                min_size, min_age, min_ratio, min_seed, fb_age, fb_ratio = requirements
 
                         if cfg.exclude_unlabelled and not t_label:
                                 del completed[0]
@@ -167,7 +179,7 @@ if cfg.enable_disk_check and not is_meta:
 
                                         if rule is not include:
                                                 override = True
-                                                min_size, min_age, min_ratio, fb_age, fb_ratio = label_rule
+                                                min_size, min_age, min_ratio, min_seed, fb_age, fb_ratio = label_rule
 
                                 elif cfg.labels_only:
                                         del completed[0]
@@ -186,7 +198,7 @@ if cfg.enable_disk_check and not is_meta:
 
                                         if rule is not include:
                                                 override = True
-                                                min_size, min_age, min_ratio, fb_age, fb_ratio = tracker_rule
+                                                min_size, min_age, min_ratio, min_seed, fb_age, fb_ratio = tracker_rule
 
                                 elif cfg.trackers_only:
                                         del completed[0]
@@ -195,6 +207,11 @@ if cfg.enable_disk_check and not is_meta:
                         t_age = (current_time - datetime.utcfromtimestamp(t_age)).days
                         t_ratio /= 1000.0
                         t_size_g = t_size_b / 1073741824.0
+                        t_seed = max([tracker[1] for tracker in t_tracker])
+                        
+                        if t_seed < min_seed:
+                                del completed[0]
+                                continue
 
                         if t_age < min_age or t_ratio < min_ratio or t_size_g < min_size:
 
