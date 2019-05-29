@@ -4,10 +4,13 @@ from datetime import datetime
 
 start = datetime.now()
 
-import sys, os, smtplib, config as cfg
+import sys, os, smtplib, json, config as cfg
 from subprocess import check_output
 from remotecaller import xmlrpc
-from requests import post
+try:
+        from urllib2 import Request, urlopen
+except:
+        from urllib.request import Request, urlopen
 
 try:
         from torrents import completed
@@ -74,21 +77,22 @@ def send_slack():
         slack_data = {
                 'text': 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!',
                 'username': cfg.slack_name,
-                'icon_emoji': cfg.slack_icon
+                'icon_emoji': ':white_check_mark:'
         }
-        response = post(cfg.slack_wekbook_url, data=json.dumps(slack_data), headers={'Content-Type': 'application/json'})
-        if response.status_code != 200 or response.text != 'ok':
+        req = Request(cfg.slack_webhook_url)
+        response = urlopen(req, json.dumps(slack_data).encode('utf8')).read()
+        if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
 
-if sys.argv[1] == 'email':
-        send_email()
-        sys.exit()
-
-if sys.argv[1] == 'slack':
-        send_slack()
-        sys.exit()
-
 try:
+        if sys.argv[1] == 'email':
+                send_email()
+                sys.exit()
+
+        if sys.argv[1] == 'slack':
+                send_slack()
+                sys.exit()
+        
         torrent_size = float(sys.argv[1])
         script_path = os.path.dirname(sys.argv[0])
         queue = script_path + '/queue.txt'
@@ -99,14 +103,13 @@ try:
         downloading = xmlrpc('d.multicall2', ('', 'leeching', 'd.left_bytes='))
         downloading = 0
         all_path = [path for path in cfg.maximum_space_quota]
-        mp_space, quota_mp = {}, {}
+        mp_space, quota_mp, min_sp = {}, {}, {}
         for mp in mount_points:
+                all_path.append(mount_points[mp])
+                disk = os.statvfs(mount_points[mp])
+                mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
                 for quota_path in all_path:
-                        if mp.find(quota_path) != 0 and mount_points[mp] not in all_path:
-                                all_path.append(mount_points[mp])
-                                disk = os.statvfs(mount_points[mp])
-                                mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
-                        elif mp.find(quota_path) == 0:
+                        if quota_path.find(mp) == 0:
                                 quota_mp[quota_path]=mount_points[mp]
         for tested_path in all_path:
                 if not os.path.exists(tested_path):
@@ -120,7 +123,14 @@ try:
                 else:
                         disk_free = quota_free = mp_space[tested_path]
                 available_space = (min(disk_free, quota_free) - downloading) / 1073741824.0
-                required_space = torrent_size - (available_space - cfg.minimum_space)
+                if tested_path in cfg.minimum_space_mp:
+                        minimum_space = cfg.minimum_space_mp[tested_path]
+                elif tested_path in quota_mp and quota_mp[tested_path] in cfg.minimum_space_mp:
+                        minimum_space = cfg.minimum_space_mp[quota_mp[tested_path]]
+                else:
+                        minimum_space = cfg.minimum_space
+                min_sp[tested_path] = minimum_space
+                required_space = torrent_size - (available_space - minimum_space)
                 requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.minimum_seeders, cfg.fallback_age, cfg.fallback_ratio
                 current_date = datetime.now()
                 include = override = True
@@ -223,7 +233,7 @@ try:
                 with open('testresult.txt', 'a+') as textfile:
                         textfile.write('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
                         textfile.write('\nExecuted in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB\n' % (time, count, freed_space))
-                        textfile.write('%.2f GB Free Space Before Torrent Download\n%.2f GB Free Space After %.2f GB Torrent Download\n\n' % (available_space, calc, torrent_size))
+                        textfile.write('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n\n' % (available_space, min_sp[tested_path], calc, torrent_size))
 
                         for result in deleted:
 
@@ -234,7 +244,7 @@ try:
 
                 print('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
                 print('Executed in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB' % (time, count, freed_space))
-                print('%.2f GB Free Space Before Torrent Download\n%.2f GB Free Space After %.2f GB Torrent Download\n' % (available_space, calc, torrent_size))
+                print('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n' % (available_space, min_sp[tested_path], calc, torrent_size))
                 for result in deleted:
                         print(result)
 
