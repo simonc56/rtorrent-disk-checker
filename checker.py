@@ -10,11 +10,11 @@ torrent_label = sys.argv[2]
 torrent_hash = sys.argv[3]
 torrent_path = sys.argv[4]
 torrent_size = int(sys.argv[5]) / 1073741824.0
-is_meta = True if sys.argv[5] = '1' else False
+is_meta = True if sys.argv[5] == '1' else False
 
 def disk_usage(path):
         try:
-                used_k = int(check_output(['du','-s', path]).split()[0])
+                used_k = int(check_output(['du','-ks', path]).split()[0])
         except:
                 used_k = 0
         return 1024 * used_k

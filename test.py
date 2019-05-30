@@ -29,7 +29,7 @@ except:
 
 def disk_usage(path):
         try:
-                used_k = int(check_output(['du','-s', path]).split()[0])
+                used_k = int(check_output(['du','-ks', path]).split()[0])
         except:
                 used_k = 0
         return 1024 * used_k
@@ -105,12 +105,14 @@ try:
         all_path = [path for path in cfg.maximum_space_quota]
         mp_space, quota_mp, min_sp = {}, {}, {}
         for mp in mount_points:
-                all_path.append(mount_points[mp])
-                disk = os.statvfs(mount_points[mp])
-                mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
-                for quota_path in all_path:
-                        if quota_path.find(mp) == 0:
-                                quota_mp[quota_path]=mount_points[mp]
+                if mount_points[mp] not in all_path:
+                        all_path.append(mount_points[mp])
+                        disk = os.statvfs(mount_points[mp])
+                        mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
+                        for quota_path in all_path:
+                                if quota_path.find(mount_points[mp]) == 0:
+                                        quota_mp[quota_path]=mount_points[mp]
+        completed_copy = completed[:]
         for tested_path in all_path:
                 if not os.path.exists(tested_path):
                         print('Incorrect path %s in maximum_space_quota in config.py' % (tested_path))
@@ -216,7 +218,7 @@ try:
                                 parent_directory, t_age, t_label, t_tracker, t_size_g, t_name = fallback_torrents[0]
                                 del fallback_torrents[0]
 
-                        if parent_directory not in mount_points or quota_mp[tested_path] != mount_points[parent_directory]:
+                        if (tested_path not in quota_mp and mount_points[parent_directory] != mount_points[tested_path]) or (tested_path in quota_mp and (mount_points[parent_directory] != quota_mp[tested_path] or tested_path not in parent_directory)):
                                 continue
                         
                         count += 1
@@ -247,7 +249,7 @@ try:
                 print('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n' % (available_space, min_sp[tested_path], calc, torrent_size))
                 for result in deleted:
                         print(result)
-
+                completed = completed_copy[:]
 
 
 except Exception as e:
