@@ -14,13 +14,13 @@ Python 2:
 schedule2 = cleanup, 0, 0, "execute.throw.bg=python2,/path/to/cleaner.py"
 schedule2 = update_cache, 1, 30, "execute.throw.bg=python2,/path/to/cacher.py" # 30 is the time in seconds to update torrent information
 method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python2,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
-method.set_key = event.download.inserted_new, checker, "branch=\"not=$d.is_meta=\", stpcheck="
+method.set_key = event.download.inserted_new, checker, "branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))"
 
 Python 3:
 schedule2 = cleanup, 0, 0, "execute.throw.bg=python3,/path/to/cleaner.py"
 schedule2 = update_cache, 1, 30, "execute.throw.bg=python3,/path/to/cacher.py" # 30 is the time in seconds to update torrent information
 method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python3,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
-method.set_key = event.download.inserted_new, checker, "branch=\"not=$d.is_meta=\", stpcheck="
+method.set_key = event.download.inserted_new, checker, "branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))"
 
 3. SCGI Addition
 
@@ -50,6 +50,7 @@ fi
 
 sed -i '/schedule2 = cleanup/d' $rtorrent
 sed -i '/schedule2 = update_cache/d' $rtorrent
+sed -i '/method.insert = stpcheck/d' $rtorrent
 sed -i '/event.download.inserted_new, checker, d.stop=/d' $rtorrent
 printf '\nDo you want the script to be run in Python 2 or 3?
 
@@ -88,7 +89,7 @@ while true; do
 done
 
 sed -i "1i\
-method.set_key = event.download.inserted_new, checker, \"branch=\\\"not=$d.is_meta=\\\", stpcheck=\"" $rtorrent
+method.set_key = event.download.inserted_new, checker, \"branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))\"" $rtorrent
 
 sed -i "1i\
 method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=$version,$PWD/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes=\"" $rtorrent
