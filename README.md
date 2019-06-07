@@ -25,3 +25,10 @@ Enter the following command in your terminal to run it:
 `python test.py 69`
 
 **69** = torrent size in gigabytes
+
+####New features in this fork
+- settings : maximum space quota for folders
+- settings : minimum number of seeders before deletion
+- allow torrents added in stopped state
+- test is done on every torrents folders, not just /
+- slack notifications
