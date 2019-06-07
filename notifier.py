@@ -1,5 +1,8 @@
 import os, sys, datetime, smtplib, json, config as cfg
-from requests import post
+try:
+        from urllib2 import Request, urlopen
+except:
+        from urllib.request import Request, urlopen
 
 lock = os.path.dirname(sys.argv[0]) + '/notif.txt'
 
@@ -43,8 +46,9 @@ def notif_slack():
                 'username': cfg.slack_name,
                 'icon_emoji': cfg.slack_icon
         }
-        response = post(cfg.slack_wekbook_url, data=json.dumps(slack_data), headers={'Content-Type': 'application/json'})
-        if response.status_code != 200 or response.text != 'ok':
+        req = Request(cfg.slack_webhook_url)
+        response = urlopen(req, json.dumps(slack_data).encode('utf8')).read()
+        if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
 
 if cfg.notification_email:
