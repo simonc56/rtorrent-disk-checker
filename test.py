@@ -236,7 +236,8 @@ try:
                         textfile.write('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
                         textfile.write('\nExecuted in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB\n' % (time, count, freed_space))
                         textfile.write('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n\n' % (available_space, min_sp[tested_path], calc, torrent_size))
-
+                        if calc < 0:
+                                textfile.write('Cannot free enough space!\n')
                         for result in deleted:
 
                                 if sys.version_info[0] == 3:
@@ -247,6 +248,8 @@ try:
                 print('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
                 print('Executed in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB' % (time, count, freed_space))
                 print('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n' % (available_space, min_sp[tested_path], calc, torrent_size))
+                if calc < 0:
+                        print('Cannot free enough space!\n')
                 for result in deleted:
                         print(result)
                 completed = completed_copy[:]
