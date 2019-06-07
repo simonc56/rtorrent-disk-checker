@@ -26,7 +26,7 @@ Enter the following command in your terminal to run it:
 
 **69** = torrent size in gigabytes
 
-####New features in this fork
+#### New features in this version (compared to Jadrivas version)
 - settings : maximum space quota for folders
 - settings : minimum number of seeders before deletion
 - allow torrents added in stopped state
