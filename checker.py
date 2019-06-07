@@ -108,7 +108,7 @@ if cfg.enable_disk_check and not is_meta:
         remover = script_path + '/remover.py'
         remover_queue = script_path + '/' + torrent_hash + '.txt'
         subtractions = script_path + '/' + torrent_hash + 'sub.txt'
-        emailer = script_path + '/emailer.py'
+        notifier = script_path + '/notifier.py'
         mount_point = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if os.path.ismount(path)]
         mount_point = mount_point[0] if mount_point else '/'
         quota_path = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if path in cfg.maximum_space_quota]
@@ -265,8 +265,8 @@ if cfg.enable_disk_check and not is_meta:
         [queue.write(torrent + '\n') for torrent in queued if torrent != torrent_hash]
         queue.truncate()
 
-        if available_space < required_space and cfg.enable_email:
-                Popen([sys.executable, emailer])
+        if available_space < required_space and (cfg.notification_email or notification_slack):
+                Popen([sys.executable, notifier])
 
         time.sleep(300)
         os.remove(subtractions)
