@@ -1,3 +1,14 @@
+## Fork notes
+
+#### New features in this version, compared to Jadrivas version :
+
+- settings : maximum size quota for folders
+- settings : minimum number of seeders before deletion
+- allow torrents added in stopped state
+- allow system.file.allocate = 1
+- test is done on every torrents folders, not just /
+- slack notifications
+
 ## Script Explanation
 
 #### This script is capable of the following functions upon:
@@ -25,10 +36,3 @@ Enter the following command in your terminal to run it:
 `python test.py 69`
 
 **69** = torrent size in gigabytes
-
-#### New features in this version (compared to Jadrivas version)
-- settings : maximum space quota for folders
-- settings : minimum number of seeders before deletion
-- allow torrents added in stopped state
-- test is done on every torrents folders, not just /
-- slack notifications

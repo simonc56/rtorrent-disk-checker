@@ -43,7 +43,7 @@ slack_name = 'Seedbox'
 # This script will auto detect mount points and only delete torrents inside the moint point that the torrent will be downloaded to
 
 # The minimum amount of free space (in Gigabytes) to maintain
-minimum_space = 5
+minimum_space = 1
 
 # Optional - Specify minimum space values for specific mount points
 minimum_space_mp = {
@@ -51,8 +51,8 @@ minimum_space_mp = {
 #                          '/torrents' : 100,
                    }
 
-# Optional - Specify maximum space quota for specific directories
-maximum_space_quota = {
+# Optional - Specify maximum size for specific directories (quota)
+maximum_size_quota = {
 #                          '/home/user001' : 50,
 #                          '/torrents/music' : 300,
                       }

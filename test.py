@@ -13,19 +13,21 @@ except:
         from urllib.request import Request, urlopen
 
 try:
-        from torrents import completed
+        from torrents import completed, leeching
         from mountpoints import mount_points
 except:
         print('Building cache. Please wait...')
         import cacher
 
         try:
-                cacher.build_cache('test')
+                cacher.build_cache('test ' + str(int(time.time())))
         except:
                 print('Failed\nRun the script with its full path like:\npython /path/to/test.py 69')
                 sys.exit()
 
         print('Cache built.')
+        from torrents import completed, leeching
+        from mountpoints import mount_points
 
 def disk_usage(path):
         try:
@@ -100,9 +102,7 @@ try:
         remover_queue = script_path + '/' + 'hash'
         emailer = script_path + '/emailer.py'
         last_torrent = script_path + '/hash.txt'
-        downloading = xmlrpc('d.multicall2', ('', 'leeching', 'd.left_bytes='))
-        downloading = 0
-        all_path = [path for path in cfg.maximum_space_quota]
+        all_path = [path for path in cfg.maximum_size_quota]
         mp_space, quota_mp, min_sp = {}, {}, {}
         for mp in mount_points:
                 if mount_points[mp] not in all_path:
@@ -115,16 +115,19 @@ try:
         completed_copy = completed[:]
         for tested_path in all_path:
                 if not os.path.exists(tested_path):
-                        print('Incorrect path %s in maximum_space_quota in config.py' % (tested_path))
+                        print('Incorrect path %s in maximum_size_quota in config.py' % (tested_path))
                         continue
-                elif tested_path in cfg.maximum_space_quota:
-                        quota_free = cfg.maximum_space_quota[tested_path] * 1073741824 - disk_usage(tested_path)
+                elif tested_path in cfg.maximum_size_quota:
+                        quota_free = cfg.maximum_size_quota[tested_path] * 1073741824 - disk_usage(tested_path)
                         disk_free = mp_space[quota_mp[tested_path]]
-                        if disk_free < quota_free:
+                        if disk_free < quota_free: #maybe remove this
                                 continue
                 else:
                         disk_free = quota_free = mp_space[tested_path]
-                available_space = (min(disk_free, quota_free) - downloading) / 1073741824.0
+                mp_downloading = sum(list[0] for list in leeching if list[8] in mount_points and mount_points[list[8]] == tested_path)
+                quota_downloading = sum(list[0] for list in leeching if tested_path in list[8])
+                mp_avail_space = (disk_free - mp_downloading) / 1073741824.0
+                quota_avail_space = (quota_free - quota_downloading) / 1073741824.0
                 if tested_path in cfg.minimum_space_mp:
                         minimum_space = cfg.minimum_space_mp[tested_path]
                 elif tested_path in quota_mp and quota_mp[tested_path] in cfg.minimum_space_mp:
@@ -132,15 +135,16 @@ try:
                 else:
                         minimum_space = cfg.minimum_space
                 min_sp[tested_path] = minimum_space
-                required_space = torrent_size - (available_space - minimum_space)
+                mp_required_space = torrent_size - (mp_avail_space - minimum_space)
+                quota_required_space = torrent_size - (quota_avail_space - minimum_space)
                 requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.minimum_seeders, cfg.fallback_age, cfg.fallback_ratio
                 current_date = datetime.now()
                 include = override = True
                 exclude = no = False
-                freed_space = count = 0
+                mp_freed_space = quota_freed_space = count = 0
                 fallback_torrents, deleted = [], []
 
-                while freed_space < required_space:
+                while mp_freed_space < mp_required_space or quota_freed_space < quota_required_space:
 
                         if not completed and not fallback_torrents:
                                 break
@@ -218,23 +222,33 @@ try:
                                 parent_directory, t_age, t_label, t_tracker, t_size_g, t_name = fallback_torrents[0]
                                 del fallback_torrents[0]
 
-                        if (tested_path not in quota_mp and mount_points[parent_directory] != mount_points[tested_path]) or (tested_path in quota_mp and (mount_points[parent_directory] != quota_mp[tested_path] or tested_path not in parent_directory)):
+                        if tested_path not in quota_mp:
+                                if mount_points[parent_directory] != mount_points[tested_path]:
+                                        continue
+                        elif mount_points[parent_directory] != quota_mp[tested_path]:
                                 continue
-                        
+                        elif tested_path not in parent_directory and mp_freed_space >= mp_required_space:
+                                continue
                         count += 1
-                        freed_space += t_size_g
-                        deleted.append('%s. Age    : %s Days Old\n   Name   : %s\n   Size   : %s GB\n   Label  : %s\n   Tracker: %s\n' % (count, t_age, t_name, t_size_g, t_label, t_tracker[0][0]))
+                        mp_freed_space += t_size_g
+                        if tested_path in quota_mp and tested_path in parent_directory:
+                                quota_freed_space += t_size_g
+                        deleted.append('%s. Age    : %s Days Old\n   Name   : %s\n   Size   : %.2f GB\n   Label  : %s\n   Tracker: %s\n' % (count, t_age, t_name, t_size_g, t_label, t_tracker[0][0]))
 
 
                 time = datetime.now() - start
                 start = datetime.now()
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                calc = available_space + freed_space - torrent_size
+                if tested_path in quota_mp:
+                        available_space = quota_avail_space
+                        calc = quota_avail_space + mp_freed_space - torrent_size
+                else:
+                        available_space = mp_avail_space
+                        calc = mp_avail_space + mp_freed_space - torrent_size
 
                 with open('testresult.txt', 'a+') as textfile:
                         textfile.write('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
-                        textfile.write('\nExecuted in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB\n' % (time, count, freed_space))
+                        textfile.write('\nExecuted in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB\n' % (time, count, mp_freed_space))
                         textfile.write('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n\n' % (available_space, min_sp[tested_path], calc, torrent_size))
                         if calc < 0:
                                 textfile.write('Cannot free enough space!\n')
@@ -246,7 +260,7 @@ try:
                                         textfile.write(result.encode('utf-8') + '\n')
 
                 print('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
-                print('Executed in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB' % (time, count, freed_space))
+                print('Executed in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB' % (time, count, mp_freed_space))
                 print('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n' % (available_space, min_sp[tested_path], calc, torrent_size))
                 if calc < 0:
                         print('Cannot free enough space!\n')

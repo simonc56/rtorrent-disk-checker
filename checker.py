@@ -52,11 +52,11 @@ def imdb_search():
         votes = ratings['ratingCount']
 
         if rating < minimum_rating or votes < minimum_votes:
-                xmlrpc('d.erase', tuple([torrent_hash]))
+                xmlrpc('d.erase', (torrent_hash,))
                 sys.exit()
 
         if skip_foreign and 'US' not in country:
-                xmlrpc('d.erase', tuple([torrent_hash]))
+                xmlrpc('d.erase', (torrent_hash,))
                 sys.exit()
 
 if torrent_label in cfg.imdb:
@@ -95,15 +95,14 @@ if cfg.enable_disk_check and not is_meta:
                 time.sleep(0.01)
 
         try:
-                from torrents import completed
+                from torrents import completed, leeching
                 from mountpoints import mount_points
         except:
                 import cacher
-                cacher.build_cache('checker')
-                from torrents import completed
+                cacher.build_cache('checker ' + str(int(time.time())))
+                from torrents import completed, leeching
                 from mountpoints import mount_points
 
-        tupled_hash = (torrent_hash,)
         current_time = datetime.now()
         remover = script_path + '/remover.py'
         remover_queue = script_path + '/' + torrent_hash + '.txt'
@@ -111,47 +110,49 @@ if cfg.enable_disk_check and not is_meta:
         notifier = script_path + '/notifier.py'
         mount_point = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if os.path.ismount(path)]
         mount_point = mount_point[0] if mount_point else '/'
-        quota_path = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if path in cfg.maximum_space_quota]
+        quota_path = [path for path in [torrent_path.rsplit('/', num)[0] for num in range(torrent_path.count('/'))] if path in cfg.maximum_size_quota]
         quota_path = quota_path[0] if quota_path else False
-
+        
+        disk = os.statvfs(mount_point)
+        disk_free = disk.f_bsize * disk.f_bavail
+        quota_free = 0
+        if quota_path:
+                quota_free = cfg.maximum_size_quota[quota_path] * 1073741824 - disk_usage(quota_path)
         try:
                 from torrent import downloads
-
-                last_mount, downloaded, last_hash, additions = downloads[0]
-
-                if last_mount == mount_point:
-                        downloading = xmlrpc('d.left_bytes', tuple([last_hash]))
-                else:
-                        downloading = 0
-
-                additions = []
+                mp_additions = []
+                quota_additions = []
                 downloads = [list for list in downloads if current_time - list[1] < timedelta(minutes=3)]
-                history = [(t_hash, additions.append(add)) for m_point, d_time, t_hash, add in downloads if m_point == mount_point]
-                history = [list[0] for list in history]
-
+                mp_history = [(t_hash, mp_additions.append(add)) for p_dir, d_time, t_hash, add, q_add in downloads if mount_points[p_dir] == mount_point]
+                quota_history = [(t_hash, quota_additions.append(q_add)) for p_dir, d_time, t_hash, add, q_add  in downloads if quota_path and quota_path in p_dir]
+                mp_history = [list[0] for list in mp_history]
+                quota_history = [list[0] for list in quota_history]
                 try:
-                        unaccounted = sum(additions) - sum(int(open(script_path + '/' + list + 'sub.txt').read()) for list in history)
+                        mp_unaccounted = sum(mp_additions) - sum(int(open(script_path + '/' + list + 'sub.txt').read()) for list in mp_history)
                 except:
-                        unaccounted = 0
+                        mp_unaccounted = 0
+                try:
+                        quota_unaccounted = sum(quota_additions) - sum(int(open(script_path + '/' + list + 'sub.txt').read()) for list in quota_history)
+                except:
+                        quota_unaccounted = 0
         except:
                 downloads = []
-                downloading = 0
-                unaccounted = 0
-
-        disk = os.statvfs(mount_point)
-        disk_free = quota_free = disk.f_bsize * disk.f_bavail
-        if quota_path:
-                quota_free = cfg.maximum_space_quota[quota_path] * 1073741824 - disk_usage(quota_path)
-        available_space = (min(disk_free, quota_free) + unaccounted - downloading) / 1073741824.0
+                mp_downloading = quota_downloading = 0
+                mp_unaccounted = quota_unaccounted = 0
+        mp_downloading = sum(list[0] for list in leeching if mount_points[list[8]] == mount_point)
+        quota_downloading = sum(list[0] for list in leeching if quota_path in list[8])
+        mp_avail_space = (disk_free + mp_unaccounted - mp_downloading) / 1073741824.0
+        quota_avail_space = (quota_free + quota_unaccounted - quota_downloading) / 1073741824.0
         minimum_space = cfg.minimum_space_mp[mount_point] if mount_point in cfg.minimum_space_mp else cfg.minimum_space
-        required_space = torrent_size - (available_space - minimum_space)
+        mp_required_space = torrent_size - (mp_avail_space - minimum_space)
+        quota_required_space = torrent_size - (quota_avail_space - minimum_space)
         requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.minimum_seeders, cfg.fallback_age, cfg.fallback_ratio
         include = override = True
-        exclude = mp_updated = no = False
-        freed_space = deleted = 0
+        exclude = no = False
+        mp_freed_space = quota_freed_space = deleted = quota_deleted = 0
         fallback_torrents = []
 
-        while freed_space < required_space:
+        while mp_freed_space < mp_required_space or quota_freed_space < quota_required_space:
 
                 if not completed and not fallback_torrents:
                         break
@@ -229,13 +230,9 @@ if cfg.enable_disk_check and not is_meta:
                         parent_directory, t_hash, t_path, t_size_b, t_size_g = fallback_torrents[0]
                         del fallback_torrents[0]
 
-                if parent_directory not in mount_points:
-                        mp_updated = True
-                        t_mp = [path for path in [parent_directory.rsplit('/', num)[0] for num in range(parent_directory.count('/'))] if os.path.ismount(path)]
-                        t_mp = t_mp[0] if t_mp else '/'
-                        mount_points[parent_directory] = t_mp
-
                 if mount_points[parent_directory] != mount_point:
+                        continue
+                elif quota_path and quota_path not in parent_directory and mp_freed_space >= mp_required_space:
                         continue
 
                 try:
@@ -248,15 +245,16 @@ if cfg.enable_disk_check and not is_meta:
 
                 Popen([sys.executable, remover, remover_queue, t_hash, t_path, subtractions])
                 deleted += t_size_b
-                freed_space += t_size_g
+                mp_freed_space += t_size_g
+                if quota_path and quota_path in parent_directory:
+                        quota_freed_space += t_size_g
+                        quota_deleted += t_size_b
 
-        if available_space >= required_space:
-                xmlrpc('d.start', tupled_hash)
-
-        if mp_updated:
-                open(script_path + '/mountpoints.py', mode='w+').write('mount_points = ' + pprint.pformat(mount_points))
-
-        downloads.insert(0, (mount_point, current_time, torrent_hash, deleted))
+        if (not quota_path and mp_freed_space >= mp_required_space) or quota_freed_space >= quota_required_space: #not ok
+                xmlrpc('d.start', (torrent_hash,))
+        elif cfg.notification_email or cfg.notification_slack:
+                Popen([sys.executable, notifier])
+        downloads.insert(0, (torrent_path, current_time, torrent_hash, deleted, quota_deleted))
         open(script_path + '/torrent.py', mode='w+').write('import datetime\ndownloads = ' + pprint.pformat(downloads))
 
         queue = open(queue, mode='r+')
@@ -264,9 +262,6 @@ if cfg.enable_disk_check and not is_meta:
         queue.seek(0)
         [queue.write(torrent + '\n') for torrent in queued if torrent != torrent_hash]
         queue.truncate()
-
-        if available_space < required_space and (cfg.notification_email or notification_slack):
-                Popen([sys.executable, notifier])
 
         time.sleep(300)
         os.remove(subtractions)
