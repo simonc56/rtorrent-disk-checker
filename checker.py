@@ -115,7 +115,7 @@ if cfg.enable_disk_check and not is_meta:
         
         disk = os.statvfs(mount_point)
         disk_free = disk.f_bsize * disk.f_bavail
-        quota_free = 0
+        quota_free = 10**15
         if quota_path:
                 quota_free = cfg.maximum_size_quota[quota_path] * 1073741824 - disk_usage(quota_path)
         try:
@@ -140,7 +140,7 @@ if cfg.enable_disk_check and not is_meta:
                 mp_downloading = quota_downloading = 0
                 mp_unaccounted = quota_unaccounted = 0
         mp_downloading = sum(list[0] for list in leeching if mount_points[list[8]] == mount_point)
-        quota_downloading = sum(list[0] for list in leeching if quota_path in list[8])
+        quota_downloading = sum(list[0] for list in leeching if quota_path and quota_path in list[8])
         mp_avail_space = (disk_free + mp_unaccounted - mp_downloading) / 1073741824.0
         quota_avail_space = (quota_free + quota_unaccounted - quota_downloading) / 1073741824.0
         minimum_space = cfg.minimum_space_mp[mount_point] if mount_point in cfg.minimum_space_mp else cfg.minimum_space
@@ -234,6 +234,8 @@ if cfg.enable_disk_check and not is_meta:
                         continue
                 elif quota_path and quota_path not in parent_directory and mp_freed_space >= mp_required_space:
                         continue
+                elif quota_path and quota_path in parent_directory and quota_freed_space >= quota_required_space:
+                        continue
 
                 try:
                         xmlrpc('d.open', (t_hash,))
@@ -250,7 +252,7 @@ if cfg.enable_disk_check and not is_meta:
                         quota_freed_space += t_size_g
                         quota_deleted += t_size_b
 
-        if (not quota_path and mp_freed_space >= mp_required_space) or quota_freed_space >= quota_required_space: #not ok
+        if mp_freed_space >= mp_required_space and (not quota_path or quota_freed_space >= quota_required_space):
                 xmlrpc('d.start', (torrent_hash,))
         elif cfg.notification_email or cfg.notification_slack:
                 Popen([sys.executable, notifier])

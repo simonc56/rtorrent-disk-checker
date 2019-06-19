@@ -227,7 +227,10 @@ try:
                                         continue
                         elif mount_points[parent_directory] != quota_mp[tested_path]:
                                 continue
-                        elif tested_path not in parent_directory and mp_freed_space >= mp_required_space:
+                        elif tested_path not in parent_directory:
+                                if mp_freed_space >= mp_required_space:
+                                        continue
+                        elif quota_freed_space >= quota_required_space:
                                 continue
                         count += 1
                         mp_freed_space += t_size_g
