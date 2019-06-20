@@ -94,14 +94,10 @@ if cfg.enable_disk_check and not is_meta:
 
                 time.sleep(0.01)
 
-        try:
-                from torrents import completed, leeching
-                from mountpoints import mount_points
-        except:
-                import cacher
-                cacher.build_cache('checker ' + str(int(time.time())))
-                from torrents import completed, leeching
-                from mountpoints import mount_points
+        import cacher
+        cacher.build_cache('checker ' + str(int(time.time())))
+        from torrents import completed, leeching
+        from mountpoints import mount_points
 
         current_time = datetime.now()
         remover = script_path + '/remover.py'

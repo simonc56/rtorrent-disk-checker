@@ -12,13 +12,11 @@ chmod +x checker.py config.py remotecaller.py remover.py emailer.py cacher.py cl
 
 Python 2:
 schedule2 = cleanup, 0, 0, "execute.throw.bg=python2,/path/to/cleaner.py"
-schedule2 = update_cache, 1, 30, "execute.throw.bg=python2,/path/to/cacher.py" # 30 is the time in seconds to update torrent information
 method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python2,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
 method.set_key = event.download.inserted_new, checker, "branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))"
 
 Python 3:
 schedule2 = cleanup, 0, 0, "execute.throw.bg=python3,/path/to/cleaner.py"
-schedule2 = update_cache, 1, 30, "execute.throw.bg=python3,/path/to/cacher.py" # 30 is the time in seconds to update torrent information
 method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python3,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
 method.set_key = event.download.inserted_new, checker, "branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))"
 
@@ -49,7 +47,6 @@ if [ ! -f "$rtorrent" ]; then
 fi
 
 sed -i '/schedule2 = cleanup/d' $rtorrent
-sed -i '/schedule2 = update_cache/d' $rtorrent
 sed -i '/method.insert = stpcheck/d' $rtorrent
 sed -i '/event.download.inserted_new, checker, d.stop=/d' $rtorrent
 printf '\nDo you want the script to be run in Python 2 or 3?
@@ -93,9 +90,6 @@ method.set_key = event.download.inserted_new, checker, \"branch=((and,((not,((d.
 
 sed -i "1i\
 method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=$version,$PWD/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes=\"" $rtorrent
-
-sed -i "1i\
-schedule2 = update_cache, 1, $update, \"execute.throw.bg=$version,$PWD/cacher.py\"" $rtorrent
 
 sed -i "1i\
 schedule2 = cleanup, 0, 0, \"execute.throw.bg=$version,$PWD/cleaner.py\"" $rtorrent

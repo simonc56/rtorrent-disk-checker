@@ -14,7 +14,7 @@ def enter(identity):
         if os.path.isfile(lock):
                 with open(lock, 'r') as txt:
                         running_id, running_start = txt.read().strip().splitlines()[0].split()
-                if (running_id == 'schedule' and int(time.time()) - running_start < timedelta(seconds=30)) or (identity == 'schedule' and running_id == 'checker'):
+                if (running_id == 'cacher' and int(time.time()) - running_start < timedelta(seconds=30)) or (identity == 'cacher' and running_id == 'checker'):
                         sys.exit()
         with open(lock, 'w') as txt:
                 txt.write(identity + '\n')
@@ -67,4 +67,4 @@ def build_cache(identity):
                 open(mp_cache, mode='w+').write('mount_points = ' + pprint.pformat(mount_points))
 
 if __name__ == "__main__":
-        build_cache('schedule ' + str(int(time.time())))
+        build_cache('cacher ' + str(int(time.time())))
