@@ -39,7 +39,7 @@ def build_cache(identity):
         [list.append(list[7].rsplit('/', 1)[0]) if list[5] in list[7] else list.append(list[7]) for list in completed]
         leeching = xmlrpc('d.multicall2', ('', 'leeching', 'd.left_bytes=', 'd.custom1=', 't.multicall=,t.url=,t.scrape_complete=', 'd.ratio=','d.size_bytes=', 'd.name=', 'd.hash=', 'd.directory='))
         [list.append(list[7].rsplit('/', 1)[0]) if list[5] in list[7] else list.append(list[7]) for list in leeching]
-        if xmlrpc('system.file.allocate',''):
+        if xmlrpc('system.file.allocate',('',)):
                 for list in leeching:
                         if list[5] in list[7]:
                                 list[0]=list[4]-folder_size(list[7])
