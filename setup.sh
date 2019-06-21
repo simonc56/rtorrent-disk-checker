@@ -37,7 +37,7 @@ pip install imdbpie
 
 COMMENT
 
-chmod +x checker.py config.py remotecaller.py remover.py emailer.py cacher.py cleaner.py
+chmod +x checker.py config.py remotecaller.py remover.py notifier.py cacher.py cleaner.py
 
 rtorrent="/home/$USER/.rtorrent.rc"
 
@@ -71,18 +71,6 @@ while true; do
               printf '\nEnter [2] or [3]: '
               ;;
     esac
-done
-
-while true; do
-    printf '\nEnter the time in seconds to repeatedly update torrent information: '
-    read update
-    printf "\nYou have entered $update seconds\n"
-    printf '\nEnter [Y] to confirm or [N] to re-enter: '
-    read answer
-
-    if [[ $answer =~ ^[Yy]$ ]]; then
-            break
-    fi
 done
 
 sed -i "1i\
