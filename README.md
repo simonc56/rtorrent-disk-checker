@@ -9,6 +9,7 @@
 - test is done on every torrents folders, not just /
 - slack notifications
 - no permanent cache update needed
+- allow to exceptionally bypass disk check with label 'bypass'
 
 ## Script Explanation
 

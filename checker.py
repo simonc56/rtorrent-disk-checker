@@ -63,7 +63,7 @@ if torrent_label in cfg.imdb:
         minimum_rating, minimum_votes, skip_foreign = cfg.imdb[torrent_label]
         imdb_search()
 
-if cfg.enable_disk_check and not is_meta:
+if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         script_path = os.path.dirname(sys.argv[0])
         queue = script_path + '/queue.txt'
 
@@ -135,8 +135,8 @@ if cfg.enable_disk_check and not is_meta:
                 downloads = []
                 mp_downloading = quota_downloading = 0
                 mp_unaccounted = quota_unaccounted = 0
-        mp_downloading = sum(list[0] for list in leeching if mount_points[list[8]] == mount_point)
-        quota_downloading = sum(list[0] for list in leeching if quota_path and quota_path in list[8])
+        mp_downloading = sum(list[0] for list in leeching if mount_points[list[8]] == mount_point and list[6] != torrent_hash)
+        quota_downloading = sum(list[0] for list in leeching if quota_path and quota_path in list[8] and list[6] != torrent_hash)
         mp_avail_space = (disk_free + mp_unaccounted - mp_downloading) / 1073741824.0
         quota_avail_space = (quota_free + quota_unaccounted - quota_downloading) / 1073741824.0
         minimum_space = cfg.minimum_space_mp[mount_point] if mount_point in cfg.minimum_space_mp else cfg.minimum_space
@@ -205,12 +205,8 @@ if cfg.enable_disk_check and not is_meta:
                         t_ratio /= 1000.0
                         t_size_g = t_size_b / 1073741824.0
                         t_seed = max([tracker[1] for tracker in t_tracker])
-                        
-                        if t_seed < min_seed:
-                                del completed[0]
-                                continue
 
-                        if t_age < min_age or t_ratio < min_ratio or t_size_g < min_size:
+                        if t_age < min_age or t_ratio < min_ratio or t_size_g < min_size or t_seed < min_seed:
 
                                 if fb_age is not no and t_age >= fb_age and t_size_g >= min_size:
                                         fallback_torrents.append((parent_directory, t_hash, t_path, t_size_b, t_size_g))
@@ -223,8 +219,7 @@ if cfg.enable_disk_check and not is_meta:
 
                         del completed[0]
                 else:
-                        parent_directory, t_hash, t_path, t_size_b, t_size_g = fallback_torrents[0]
-                        del fallback_torrents[0]
+                        parent_directory, t_hash, t_path, t_size_b, t_size_g = fallback_torrents.pop(0)
 
                 if mount_points[parent_directory] != mount_point:
                         continue
