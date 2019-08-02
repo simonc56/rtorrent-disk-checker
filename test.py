@@ -4,7 +4,7 @@ from datetime import datetime
 
 start = datetime.now()
 
-import sys, os, smtplib, json, config as cfg
+import sys, os, time, smtplib, json, config as cfg
 from subprocess import check_output
 from remotecaller import xmlrpc
 try:
@@ -142,7 +142,7 @@ try:
                 include = override = True
                 exclude = no = False
                 mp_freed_space = quota_freed_space = count = 0
-                fallback_torrents, deleted = [], []
+                fallback_torrents, removable, removed, displayed = [], [], [], []
 
                 while mp_freed_space < mp_required_space or quota_freed_space < quota_required_space:
 
@@ -232,13 +232,28 @@ try:
                                         continue
                         elif quota_freed_space >= quota_required_space:
                                 continue
-                        count += 1
                         mp_freed_space += t_size_g
                         if tested_path in quota_mp and tested_path in parent_directory:
                                 quota_freed_space += t_size_g
-                        deleted.append('%s. Age    : %s Days Old\n   Name   : %s\n   Size   : %.2f GB\n   Label  : %s\n   Tracker: %s\n' % (count, t_age, t_name, t_size_g, t_label, t_tracker[0][0]))
-
-
+                        removable.append((t_age, t_name, t_size_g, t_label, t_tracker[0][0]))
+                
+                #if last removed torrent is large, maybe some smaller removed torrents can stay
+                removable.sort()
+                mp_futur_space = mp_freed_space - mp_required_space
+                quota_futur_space = quota_freed_space - quota_required_space
+                while removable:
+                        t_age, t_name, t_size_g, t_label, t_tracker = removable.pop()
+                        if t_size_g < mp_futur_space and t_size_g < quota_futur_space:
+                                mp_futur_space -= t_size_g
+                                mp_freed_space -= t_size_g
+                                quota_futur_space -= t_size_g
+                                quota_freed_space -= t_size_g
+                        else:
+                                removed.append((t_age, t_name, t_size_g, t_label, t_tracker))
+                while removed:
+                        t_age, t_name, t_size_g, t_label, t_tracker = removed.pop()
+                        count += 1
+                        displayed.append('%s. Age    : %s Days Old\n   Name   : %s\n   Size   : %.2f GB\n   Label  : %s\n   Tracker: %s\n' % (count, t_age, t_name, t_size_g, t_label, t_tracker))
                 time = datetime.now() - start
                 start = datetime.now()
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -255,7 +270,7 @@ try:
                         textfile.write('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n\n' % (available_space, min_sp[tested_path], calc, torrent_size))
                         if calc < 0:
                                 textfile.write('Cannot free enough space!\n')
-                        for result in deleted:
+                        for result in displayed:
 
                                 if sys.version_info[0] == 3:
                                         textfile.write(result + '\n')
@@ -267,7 +282,7 @@ try:
                 print('%.2f GB Free Space Before Torrent Download (minimum space %.2f GB)\n%.2f GB Free Space After %.2f GB Torrent Download\n' % (available_space, min_sp[tested_path], calc, torrent_size))
                 if calc < 0:
                         print('Cannot free enough space!\n')
-                for result in deleted:
+                for result in displayed:
                         print(result)
                 completed = completed_copy[:]
 

@@ -146,7 +146,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         include = override = True
         exclude = no = False
         mp_freed_space = quota_freed_space = deleted = quota_deleted = 0
-        fallback_torrents = []
+        fallback_torrents, removable, removed = [], [], []
 
         while mp_freed_space < mp_required_space or quota_freed_space < quota_required_space:
 
@@ -236,7 +236,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                 if not deleted:
                         open(subtractions, mode='w+').write('0')
 
-                Popen([sys.executable, remover, remover_queue, t_hash, t_path, subtractions])
+                removable.append((t_size_g, t_hash, t_path))
                 deleted += t_size_b
                 mp_freed_space += t_size_g
                 if quota_path and quota_path in parent_directory:
@@ -244,6 +244,22 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                         quota_deleted += t_size_b
 
         if mp_freed_space >= mp_required_space and (not quota_path or quota_freed_space >= quota_required_space):
+                #if last removed torrent is large, maybe some smaller removed torrents can stay
+                removable.sort()
+                mp_extra_space = mp_freed_space - mp_required_space
+                quota_extra_space = quota_freed_space - quota_required_space
+                while removable:
+                        t_size_g, t_hash, t_path = removable.pop()
+                        if t_size_g < mp_extra_space and t_size_g < quota_extra_space:
+                                mp_extra_space -= t_size_g
+                                quota_extra_space -= t_size_g
+                                deleted -= t_size_g
+                                quota_deleted -= t_size_g
+                        else:
+                                removed.append((t_size_g, t_hash, t_path))
+                while removed:
+                        t_size_g, t_hash, t_path = removed.pop()
+                        Popen([sys.executable, remover, remover_queue, t_hash, t_path, subtractions])
                 xmlrpc('d.start', (torrent_hash,))
         elif cfg.notification_email or cfg.notification_slack:
                 Popen([sys.executable, notifier])

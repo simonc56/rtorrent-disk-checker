@@ -10,6 +10,7 @@
 - slack notifications
 - no permanent cache update needed
 - allow to exceptionally bypass disk check with label 'bypass'
+- if last removed torrent is large, some smaller removed torrents can stay (optimization)
 
 ## Script Explanation
 
