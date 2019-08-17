@@ -109,8 +109,8 @@ try:
                         all_path.append(mount_points[mp])
                         disk = os.statvfs(mount_points[mp])
                         mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
-                        for quota_path in all_path:
-                                if quota_path.find(mount_points[mp]) == 0:
+                        for quota_path in cfg.maximum_size_quota:
+                                if quota_path.find(mount_points[mp]) == 0 and (quota_path not in quota_mp or len(quota_mp[quota_path]) < len(mount_points[mp])):
                                         quota_mp[quota_path]=mount_points[mp]
         completed_copy = completed[:]
         for tested_path in all_path:
@@ -223,7 +223,7 @@ try:
                                 del fallback_torrents[0]
 
                         if tested_path not in quota_mp:
-                                if mount_points[parent_directory] != mount_points[tested_path]:
+                                if mount_points[parent_directory] != tested_path:
                                         continue
                         elif mount_points[parent_directory] != quota_mp[tested_path]:
                                 continue
