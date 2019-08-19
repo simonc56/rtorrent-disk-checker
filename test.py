@@ -110,8 +110,9 @@ try:
                         disk = os.statvfs(mount_points[mp])
                         mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
                         for quota_path in cfg.maximum_size_quota:
-                                if quota_path.find(mount_points[mp]) == 0 and (quota_path not in quota_mp or len(quota_mp[quota_path]) < len(mount_points[mp])):
-                                        quota_mp[quota_path]=mount_points[mp]
+                                mount_point = [path for path in [quota_path.rsplit('/', num)[0] for num in range(quota_path.count('/'))] if os.path.ismount(path)]
+                                mount_point = mount_point[0] if mount_point else '/'
+                                quota_mp[quota_path] = mount_point
         completed_copy = completed[:]
         for tested_path in all_path:
                 if not os.path.exists(tested_path):
