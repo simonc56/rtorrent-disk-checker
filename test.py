@@ -12,23 +12,6 @@ try:
 except:
         from urllib.request import Request, urlopen
 
-try:
-        from torrents import completed, leeching
-        from mountpoints import mount_points
-except:
-        print('Building cache. Please wait...')
-        import cacher
-
-        try:
-                cacher.build_cache('test ' + str(int(time.time())))
-        except:
-                print('Failed\nRun the script with its full path like:\npython /path/to/test.py 69')
-                sys.exit()
-
-        print('Cache built.')
-        from torrents import completed, leeching
-        from mountpoints import mount_points
-
 def disk_usage(path):
         try:
                 used_k = int(check_output(['du','-ks', path]).split()[0])
@@ -95,6 +78,16 @@ try:
                 send_slack()
                 sys.exit()
         
+        try:
+                import cacher
+                print('Building cache. Please wait...')
+                cacher.build_cache('test ' + str(int(time.time())))
+                from torrents import completed, leeching
+                from mountpoints import mount_points
+                print('Cache built.')
+        except:
+                print('Failed\nRun the script with its full path like:\npython /path/to/test.py 69')
+                sys.exit()
         torrent_size = float(sys.argv[1])
         script_path = os.path.dirname(sys.argv[0])
         queue = script_path + '/queue.txt'
