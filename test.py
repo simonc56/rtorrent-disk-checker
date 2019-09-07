@@ -269,7 +269,7 @@ try:
                                 if sys.version_info[0] == 3:
                                         textfile.write(result + '\n')
                                 else:
-                                        textfile.write(result.encode('utf-8') + '\n')
+                                        textfile.write(result.encode('utf8') + '\n')
 
                 print('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
                 print('Executed in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB' % (time, count, mp_freed_space))
@@ -277,12 +277,12 @@ try:
                 if calc < 0:
                         print('Cannot free enough space!\n')
                 for result in displayed:
-                        print(result)
+                        print(result.encode('utf8'))
                 completed = completed_copy[:]
 
 
 except Exception as e:
-        print(e)
+        print(e.encode('utf8'))
 
 try:
         xmlrpc('d.multicall2', ('', 'leeching', 'd.down.total='))
