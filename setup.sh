@@ -49,38 +49,16 @@ fi
 sed -i '/schedule2 = cleanup/d' $rtorrent
 sed -i '/method.insert = stpcheck/d' $rtorrent
 sed -i '/event.download.inserted_new, checker, d.stop=/d' $rtorrent
-printf '\nDo you want the script to be run in Python 2 or 3?
 
-Enter [2] for Python 2 or [3] for Python 3: '
-
-while true; do
-    read answer
-    case $answer in
-
-        [2] )
-                 version='python2'
-                 break
-                 ;;
-
-        [3] )
-                 version='python3'
-                 break
-                 ;;
-
-        * )
-              printf '\nEnter [2] or [3]: '
-              ;;
-    esac
-done
 
 sed -i "1i\
 method.set_key = event.download.inserted_new, checker, \"branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))\"" $rtorrent
 
 sed -i "1i\
-method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=$version,$PWD/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes=\"" $rtorrent
+method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=python,$PWD/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes=\"" $rtorrent
 
 sed -i "1i\
-schedule2 = cleanup, 0, 0, \"execute.throw.bg=$version,$PWD/cleaner.py\"" $rtorrent
+schedule2 = cleanup, 0, 0, \"execute.throw.bg=python,$PWD/cleaner.py\"" $rtorrent
 
 printf '\nWill you be using the IMDB function of the script [Y]/[N]?: '
 
