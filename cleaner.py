@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys, os
 
 directory = os.path.dirname(sys.argv[0])

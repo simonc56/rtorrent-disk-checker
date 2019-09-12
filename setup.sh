@@ -1,3 +1,5 @@
+#!/bin/sh
+
 << 'COMMENT'
 
 Manual Setup Instructions:
