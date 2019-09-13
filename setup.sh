@@ -33,12 +33,13 @@ pip install imdbpie
 
 COMMENT
 
+cd $(dirname "$0")
 chmod +x checker.py config.py remotecaller.py remover.py notifier.py cacher.py cleaner.py
 
-rtorrent="/home/$USER/.rtorrent.rc"
+rtorrent="$HOME/.rtorrent.rc"
 
 if [ ! -f "$rtorrent" ]; then
-    echo 'rtorrent.rc file not found. Terminating script.'
+    echo '.rtorrent.rc file not found in $HOME. Terminating script.'
     exit
 fi
 

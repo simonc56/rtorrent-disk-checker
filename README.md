@@ -8,9 +8,10 @@
 - allow system.file.allocate = 1
 - test is done on every torrents folders, not just /
 - slack notifications
-- no permanent cache update needed
+- no need to permanently update cache
 - allow to exceptionally bypass disk check with label 'bypass'
 - if last removed torrent is large, some smaller removed torrents can stay (optimization)
+- no need to restart rtorrent
 
 ## Script Explanation
 
