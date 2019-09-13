@@ -12,14 +12,8 @@ chmod +x checker.py config.py remotecaller.py remover.py emailer.py cacher.py cl
 
 2a. Add the following code to ~/.rtorrent.rc !! Update the path to cleaner, cacher.py & checker.py !! Restart rtorrent once added:
 
-Python 2:
-schedule2 = cleanup, 0, 0, "execute.throw.bg=python2,/path/to/cleaner.py"
-method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python2,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
-method.set_key = event.download.inserted_new, checker, "branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))"
-
-Python 3:
-schedule2 = cleanup, 0, 0, "execute.throw.bg=python3,/path/to/cleaner.py"
-method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python3,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
+schedule2 = cleanup, 0, 0, "execute.throw.bg=python,/path/to/cleaner.py"
+method.insert = stpcheck, simple, d.stop=, "execute.throw.bg=python,/path/to/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes="
 method.set_key = event.download.inserted_new, checker, "branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))"
 
 3. SCGI Addition
@@ -57,7 +51,7 @@ sed -i "1i\
 method.set_key = event.download.inserted_new, checker, \"branch=((and,((not,((d.is_meta)))),((d.state)))),((stpcheck))\"" $rtorrent
 
 sed -i "1i\
-method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=python,$PWD/checker.py,$d.name=,$d.custom1=,$d.hash=,$d.directory=,$d.size_bytes=\"" $rtorrent
+method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=python,$PWD/checker.py,\$d.name=,\$d.custom1=,\$d.hash=,\$d.directory=,\$d.size_bytes=\"" $rtorrent
 
 sed -i "1i\
 schedule2 = cleanup, 0, 0, \"execute.throw.bg=python,$PWD/cleaner.py\"" $rtorrent
@@ -88,59 +82,13 @@ scgi=$(grep -oP "^[^#]*scgi.* = \K.*" $rtorrent)
 
 if [ -z "$scgi" ]; then
     printf '\n\033[0;36mUnable to locate a SCGI address or unix socket file path. Check your rtorrent.rc file and update the SCGI variable in config.py.\033[0m\n'
+    printf '\nConfiguration completed.\n'
+    printf '\nRtorrent has to be restarted in order for the changes to take effect.'
 else
     sed -i "7s~.*~scgi = '$scgi'~" config.py
     printf '\nSCGI has been updated in your config.py file.\n'
+    python "$PWD/remotecaller.py" "setup"
+    printf '\nConfiguration completed.\n'
+    
 fi
 
-printf '\nConfiguration completed.\n'
-printf '\nRtorrent has to be restarted in order for the changes to take effect.
-
-Do you want to the script to attempt a rtorrent restart now [Y]/[N]?: '
-
-while true; do
-    read answer
-    case $answer in
-
-        [yY] )
-                 restart_rtorrent=true
-                 break
-                 ;;
-
-        [nN] )
-                 restart_rtorrent=false
-                 break
-                 ;;
-
-        * )
-              printf '\nEnter [Y] or [N]: '
-              ;;
-    esac
-done
-
-if [ $restart_rtorrent = true ];  then
-
-    printf '\nAttempting to restart rtorrent.\n'
-    instance=$(pgrep rtorrent)
-
-    if [ $instance ]; then
-
-        while true; do
-            kill -KILL $instance
-
-            if : ! pgrep rtorrent; then
-                screen -d -m rtorrent
-
-                if : pgrep rtorrent; then
-                    printf '\nRtorrent has been restarted successfully.\n\n'
-                else
-                    printf '\n\033[0;36mFailed to restart rtorrent. Please restart rtorrent manually.\033[0m\n\n'
-                fi
-
-                break
-            fi
-        done
-    else
-        printf '\n\033[0;36mFailed to restart rtorrent. Please restart rtorrent manually.\033[0m\n\n'
-    fi
-fi
