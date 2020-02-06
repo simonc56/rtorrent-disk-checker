@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os, sys, datetime, smtplib, json, config as cfg
-try:
+
+PY2 = sys.version_info[0] == 2  # True for Python 2
+
+if PY2:
         from urllib2 import Request, urlopen
-except:
+else:
         from urllib.request import Request, urlopen
 
 lock = os.path.dirname(sys.argv[0]) + '/notif.txt'
@@ -17,6 +20,16 @@ if os.path.isfile(lock):
 
 with open(lock, 'w+') as txt:
         txt.write('1')
+
+def py2_encode(s, encoding='utf8'):
+    if PY2:
+        s = s.encode(encoding)
+    return s
+
+def py2_decode(s, encoding='utf8'):
+    if PY2:
+        s = s.decode(encoding)
+    return s
 
 def notif_email():
         server = False
@@ -50,7 +63,7 @@ def notif_slack():
                 'icon_emoji': cfg.slack_icon
         }
         req = Request(cfg.slack_webhook_url)
-        response = urlopen(req, json.dumps(slack_data).encode('utf8')).read()
+        response = urlopen(req, py2_decode(json.dumps(slack_data, ensure_ascii=False)).encode('utf8')).read()
         if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
 

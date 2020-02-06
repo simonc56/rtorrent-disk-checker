@@ -5,12 +5,14 @@ from datetime import datetime
 
 start = datetime.now()
 
+PY2 = sys.version_info[0] == 2  # True for Python 2
+
 import sys, os, time, smtplib, json, config as cfg
 from subprocess import check_output
 from remotecaller import xmlrpc
-try:
+if PY2:
         from urllib2 import Request, urlopen
-except:
+else:
         from urllib.request import Request, urlopen
 
 def disk_usage(path):
@@ -19,6 +21,16 @@ def disk_usage(path):
         except:
                 used_k = 0
         return 1024 * used_k
+
+def py2_encode(s, encoding='utf8'):
+    if PY2:
+        s = s.encode(encoding)
+    return s
+
+def py2_decode(s, encoding='utf8'):
+    if PY2:
+        s = s.decode(encoding)
+    return s
 
 def send_email():
         server = False
@@ -66,7 +78,7 @@ def send_slack():
                 'icon_emoji': ':white_check_mark:'
         }
         req = Request(cfg.slack_webhook_url)
-        response = urlopen(req, json.dumps(slack_data).encode('utf8')).read()
+        response = urlopen(req, py2_decode(json.dumps(slack_data, ensure_ascii=False)).encode('utf8')).read()
         if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
 
@@ -267,7 +279,7 @@ try:
                                 textfile.write('Cannot free enough space!\n')
                         for result in displayed:
 
-                                if sys.version_info[0] == 3:
+                                if not PY2:
                                         textfile.write(result + '\n')
                                 else:
                                         textfile.write(result.encode('utf8') + '\n')
@@ -278,12 +290,12 @@ try:
                 if calc < 0:
                         print('Cannot free enough space!\n')
                 for result in displayed:
-                        print(result.encode('utf8'))
+                        print(result)
                 completed = completed_copy[:]
 
 
 except Exception as e:
-        print(e.encode('utf8'))
+        print(e)
 
 try:
         xmlrpc('d.multicall2', ('', 'leeching', 'd.down.total='))
