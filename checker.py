@@ -262,7 +262,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                         t_size_g, t_hash, t_path = removed.pop()
                         Popen([sys.executable, remover, remover_queue, t_hash, t_path, subtractions])
                 xmlrpc('d.start', (torrent_hash,))
-        elif cfg.notification_email or cfg.notification_slack:
+        elif cfg.notification_email or cfg.notification_slack or cfg.notification_telegram:
                 Popen([sys.executable, notifier])
         downloads.insert(0, (torrent_path, current_time, torrent_hash, deleted, quota_deleted))
         open(script_path + '/torrent.py', mode='w+').write('import datetime\ndownloads = ' + pprint.pformat(downloads))

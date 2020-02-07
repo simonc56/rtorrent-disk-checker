@@ -12,8 +12,9 @@ enable_disk_check = yes
 # Receive an email when disk is full?
 notification_email = no
 
-# Receive slack notification when disk is full?
+# Receive slack or telegram notification when disk is full?
 notification_slack = no
+notification_telegram = no
 
 ###### EMAIL / SLACK SETTINGS - IGNORE IF DISABLED ######
 
@@ -36,6 +37,10 @@ subject = 'Warning: Seedbox Disk Full'
 slack_webhook_url = 'https://hooks.slack.com/services/************'
 slack_icon = ':warning:'
 slack_name = 'Seedbox'
+
+# Telegram
+telegram_token = '***:*****'
+telegram_chat_id = '****'
 
 
 ###### DISK CHECK SECTION - IGNORE IF DISABLED ######

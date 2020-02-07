@@ -5,11 +5,12 @@ from datetime import datetime
 
 start = datetime.now()
 
-PY2 = sys.version_info[0] == 2  # True for Python 2
-
 import sys, os, time, smtplib, json, config as cfg
 from subprocess import check_output
 from remotecaller import xmlrpc
+
+PY2 = sys.version_info[0] == 2  # True for Python 2
+
 if PY2:
         from urllib2 import Request, urlopen
 else:
@@ -77,10 +78,26 @@ def send_slack():
                 'username': cfg.slack_name,
                 'icon_emoji': ':white_check_mark:'
         }
-        req = Request(cfg.slack_webhook_url)
-        response = urlopen(req, py2_decode(json.dumps(slack_data, ensure_ascii=False)).encode('utf8')).read()
+        headers = {'content-type': 'application/json'}
+        req = Request(cfg.slack_webhook_url, py2_decode(json.dumps(slack_data, ensure_ascii=False)).encode('utf8'), headers)
+        response = urlopen(req).read()
         if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
+        else:
+                print('Succeeded')
+
+def send_telegram():
+        telegram_data = {
+                'chat_id': cfg.telegram_chat_id,
+                'text': 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!'
+        }
+        headers = {'content-type': 'application/json'}
+        req = Request("https://api.telegram.org/bot{token}/sendMessage".format(token=cfg.telegram_token), py2_decode(json.dumps(telegram_data, ensure_ascii=False)).encode('utf8'), headers)
+        response = json.loads(urlopen(req).read())
+        if response['ok'] != True:
+                print('Failed to send telegram notification, check token and chat_id.')
+        else:
+                print('Succeeded')
 
 try:
         if sys.argv[1] == 'email':
@@ -89,6 +106,10 @@ try:
 
         if sys.argv[1] == 'slack':
                 send_slack()
+                sys.exit()
+        
+        if sys.argv[1] == 'telegram':
+                send_telegram()
                 sys.exit()
         
         try:
