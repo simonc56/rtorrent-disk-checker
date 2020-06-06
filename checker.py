@@ -254,8 +254,8 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                         if t_size_g < mp_extra_space and t_size_g < quota_extra_space:
                                 mp_extra_space -= t_size_g
                                 quota_extra_space -= t_size_g
-                                deleted -= t_size_g
-                                quota_deleted -= t_size_g
+                                deleted -= t_size_b
+                                quota_deleted -= t_size_b
                         else:
                                 removed.append((t_size_g, t_hash, t_path))
                 while removed:
