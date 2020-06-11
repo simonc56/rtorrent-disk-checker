@@ -94,6 +94,5 @@ try:
 
         if not queued:
                 os.remove(queue)
-                cacher.build_cache(torrent_hash)
 except:
         pass
