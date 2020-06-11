@@ -234,9 +234,6 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                 except:
                         continue
 
-                if not deleted:
-                        open(subtractions, mode='w+').write('0')
-
                 removable.append((t_size_g, t_hash, t_path))
                 deleted += t_size_b
                 mp_freed_space += t_size_g
@@ -274,6 +271,8 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         queue.truncate()
 
         time.sleep(300)
-        os.remove(subtractions)
+        if os.path.isfile(subtractions):
+                os.remove(subtractions)
+
 else:
         xmlrpc('d.start', tuple([torrent_hash]))
