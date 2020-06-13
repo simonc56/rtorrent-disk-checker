@@ -50,9 +50,9 @@ def build_cache(identity):
                                         list[0] = list[4] - folder_size(list[7])
                                 elif os.path.isfile(os.path.join(list[7],list[5])):
                                         list[0] = 0
-                cache = open(cache_copy, mode='w+')
-                cache.write('completed = ' + pprint.pformat(completed))
-                cache.write('\n\nleeching = ' + pprint.pformat(leeching))
+                with open(cache_copy, mode='w+') as txt:
+                        txt.write('completed = ' + pprint.pformat(completed))
+                        txt.write('\n\nleeching = ' + pprint.pformat(leeching))
                 shutil.move(cache_copy, torrent_cache)
                 leave(identity)
 
@@ -69,7 +69,8 @@ def build_cache(identity):
                                 mount_point = mount_point[0] if mount_point else '/'
                                 mount_points[parent_directory] = mount_point
                 if mp_updated:
-                        open(mp_cache, mode='w+').write('mount_points = ' + pprint.pformat(mount_points))
+                        with open(mp_cache, mode='w+') as txt:
+                                txt.write('mount_points = ' + pprint.pformat(mount_points))
 
 if __name__ == "__main__":
         build_cache('cacher ' + str(int(time.time())))
