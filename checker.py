@@ -229,11 +229,6 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                 elif quota_path and quota_path in parent_directory and quota_freed_space >= quota_required_space:
                         continue
 
-                try:
-                        xmlrpc('d.open', (t_hash,))
-                except:
-                        continue
-
                 removable.append((t_size_g, t_hash, t_path))
                 deleted += t_size_b
                 mp_freed_space += t_size_g
@@ -257,6 +252,10 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                                 removed.append((t_size_g, t_hash, t_path))
                 while removed:
                         t_size_g, t_hash, t_path = removed.pop()
+                        try:
+                                xmlrpc('d.open', (t_hash,))
+                        except:
+                                continue
                         Popen([sys.executable, remover, remover_queue, t_hash, t_path, subtractions])
                 xmlrpc('d.start', (torrent_hash,))
         elif cfg.notification_email or cfg.notification_slack or cfg.notification_telegram:
@@ -264,13 +263,12 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         downloads.insert(0, (torrent_path, current_time, torrent_hash, deleted, quota_deleted))
         open(script_path + '/torrent.py', mode='w+').write('import datetime\ndownloads = ' + pprint.pformat(downloads))
 
-        queue = open(queue, mode='r+')
-        queued = queue.read().strip().splitlines()
-        queue.seek(0)
-        [queue.write(torrent + '\n') for torrent in queued if torrent != torrent_hash]
-        queue.truncate()
-
-        time.sleep(300)
+        with open(queue, mode='r+') as txt:
+                queued = txt.read().strip().splitlines()
+                txt.seek(0)
+                [txt.write(torrent + '\n') for torrent in queued if torrent != torrent_hash]
+                txt.truncate()
+        time.sleep(120)
         if os.path.isfile(subtractions):
                 os.remove(subtractions)
 
