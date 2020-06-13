@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, cacher, time
-from torrents import completed
+import sys, os, time
 from remotecaller import xmlrpc
 
 queue = sys.argv[1]
