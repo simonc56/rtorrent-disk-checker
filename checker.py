@@ -72,6 +72,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                 txt.write(torrent_hash + '\n')
 
         time.sleep(0.001)
+        known_first=''
 
         while True:
 
@@ -81,13 +82,20 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                 except:
                         with open(queue, 'a+') as txt:
                                 txt.write(torrent_hash + '\n')
-
                 try:
-                        if queued[0] == torrent_hash:
+                        first = queued[0]
+                        if first == torrent_hash:
                                 break
-
+                        elif first != known_first:
+                                wait_since = time.time()
+                                known_first = first
+                        elif time.time() - wait_since > 10:
+                                with open(queue, mode='r+') as txt:
+                                        queued = txt.read().strip().splitlines()
+                                        txt.seek(0)
+                                        txt.write('\n'.join(queued[1:]))
+                                        txt.truncate()
                         if torrent_hash not in queued:
-
                                 with open(queue, 'a') as txt:
                                         txt.write(torrent_hash + '\n')
                 except:
@@ -261,8 +269,8 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         elif cfg.notification_email or cfg.notification_slack or cfg.notification_telegram:
                 Popen([sys.executable, notifier])
         downloads.insert(0, (torrent_path, current_time, torrent_hash, deleted, quota_deleted))
-        open(script_path + '/torrent.py', mode='w+').write('import datetime\ndownloads = ' + pprint.pformat(downloads))
-
+        with open(script_path + '/torrent.py', mode='w+') as txt:
+                txt.write('import datetime\ndownloads = ' + pprint.pformat(downloads))
         with open(queue, mode='r+') as txt:
                 queued = txt.read().strip().splitlines()
                 txt.seek(0)
