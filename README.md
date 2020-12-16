@@ -1,6 +1,6 @@
 ## Fork notes
 
-#### New features in this version, compared to Jadrivas version :
+#### New features in this version, compared to JDRIVO version :
 
 - settings : maximum size quota for folders
 - settings : minimum number of seeders
