@@ -86,7 +86,7 @@ if [ -z "$scgi" ]; then
     printf '\nConfiguration completed.\n'
     printf '\nRtorrent has to be restarted in order for the changes to take effect.'
 else
-    sed -i "7s~.*~scgi = '$scgi'~" config.py
+    sed -i "s|scgi.*=.*|scgi = "\'${scgi}\'"|" config.py
     printf '\nSCGI has been updated in your config.py file.\n'
     python "$PWD/remotecaller.py" "setup"
     printf '\nConfiguration completed.\n'
