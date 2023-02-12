@@ -210,6 +210,13 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                                         del completed[0]
                                         continue
 
+                        if cfg.exclude_hardlinked:
+                                for root, dirs, files in os.walk(torrent_path):
+                                        for name in files:
+                                                if os.stat(os.path.join(root, name)).st_nlink > 1:
+                                                        del completed[0]
+                                                        continue
+
                         t_age = (current_time - datetime.utcfromtimestamp(t_age)).days
                         t_ratio /= 1000.0
                         t_size_g = t_size_b / 1073741824.0

@@ -78,6 +78,9 @@ fallback_age = no
 # Only the ratio of a torrent must be higher or equal to this number to be deleted (torrent size requirement remains) - no to disable
 fallback_ratio = 1.1
 
+# A torrent with a hardlink elsewhere in filesystem will not be removed - no to disable
+exclude_hardlinked = yes
+
 # GENERAL RULES END
 
 
