@@ -2,16 +2,14 @@
 
 #### New features in this version, compared to JDRIVO version :
 
-- settings : maximum size quota for folders
-- settings : minimum number of seeders
-- allow torrents added in stopped state
+- python 2 and 3 compatible
+- setting : maximum size quota for folders
 - allow system.file.allocate = 1
-- test is done on every torrents folders, not just /
-- slack, telegram notifications
-- no need to permanently update cache
-- allow to exceptionally bypass disk check with label 'bypass'
+- test is done on all mountpoints
+- option to not remove hardlinked torrents
+- lightweight: no python script running in background
+- allow to bypass disk check with label 'bypass'
 - if last removed torrent is large, some smaller removed torrents can stay (optimization)
-- no need to restart rtorrent
 
 ## Script Explanation
 
