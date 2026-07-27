@@ -134,12 +134,12 @@ try:
         for mp in mount_points:
                 if mount_points[mp] not in all_path:
                         all_path.append(mount_points[mp])
-                        disk = os.statvfs(mount_points[mp])
-                        mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
-                        for quota_path in cfg.maximum_size_quota:
-                                mount_point = [path for path in [quota_path.rsplit('/', num)[0] for num in range(quota_path.count('/'))] if os.path.ismount(path)]
-                                mount_point = mount_point[0] if mount_point else '/'
-                                quota_mp[quota_path] = mount_point
+                disk = os.statvfs(mount_points[mp])
+                mp_space[mount_points[mp]] = disk.f_bsize * disk.f_bavail
+        for quota_path in cfg.maximum_size_quota:
+                mount_point = [path for path in [quota_path.rsplit('/', num)[0] for num in range(quota_path.count('/'))] if os.path.ismount(path)]
+                mount_point = mount_point[0] if mount_point else '/'
+                quota_mp[quota_path] = mount_point
         completed_copy = completed[:]
         for tested_path in all_path:
                 if not os.path.exists(tested_path):
@@ -151,7 +151,8 @@ try:
                         if disk_free < quota_free: #maybe remove this
                                 continue
                 else:
-                        disk_free = quota_free = mp_space[tested_path]
+                        disk_free = mp_space[tested_path]
+                        quota_free = 10**15
                 mp_downloading = sum(list[0] for list in leeching if list[8] in mount_points and mount_points[list[8]] == tested_path)
                 quota_downloading = sum(list[0] for list in leeching if tested_path in list[8])
                 mp_avail_space = (disk_free - mp_downloading) / 1073741824.0
