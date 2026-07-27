@@ -2,13 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, sys, datetime, smtplib, json, config as cfg
-
-PY2 = sys.version_info[0] == 2  # True for Python 2
-
-if PY2:
-        from urllib2 import Request, urlopen
-else:
-        from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen
 
 lock = os.path.dirname(sys.argv[0]) + '/notif.txt'
 
@@ -20,16 +14,6 @@ if os.path.isfile(lock):
 
 with open(lock, 'w+') as txt:
         txt.write('1')
-
-def py2_encode(s, encoding='utf8'):
-    if PY2:
-        s = s.encode(encoding)
-    return s
-
-def py2_decode(s, encoding='utf8'):
-    if PY2:
-        s = s.decode(encoding)
-    return s
 
 def notif_email():
         server = False
@@ -63,7 +47,7 @@ def notif_slack():
                 'icon_emoji': cfg.slack_icon
         }
         headers = {'content-type': 'application/json'}
-        req = Request(cfg.slack_webhook_url, py2_decode(json.dumps(slack_data, ensure_ascii=False)).encode('utf8'), headers)
+        req = Request(cfg.slack_webhook_url, json.dumps(slack_data, ensure_ascii=False).encode('utf8'), headers)
         response = urlopen(req).read()
         if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
@@ -74,7 +58,7 @@ def notif_telegram():
                 'text': cfg.message
         }
         headers = {'content-type': 'application/json'}
-        req = Request("https://api.telegram.org/bot{token}/sendMessage".format(token=cfg.telegram_token), py2_decode(json.dumps(telegram_data, ensure_ascii=False)).encode('utf8'), headers)
+        req = Request("https://api.telegram.org/bot{token}/sendMessage".format(token=cfg.telegram_token), json.dumps(telegram_data, ensure_ascii=False).encode('utf8'), headers)
         response = json.loads(urlopen(req).read())
         if response['ok'] != True:
                 print('Failed to send telegram notification, check token and chat_id.')

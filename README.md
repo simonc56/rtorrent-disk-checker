@@ -2,7 +2,6 @@
 
 #### New features in this version, compared to JDRIVO version :
 
-- python 2 and 3 compatible
 - setting : maximum size quota for folders
 - allow system.file.allocate = 1
 - test is done on all mountpoints
