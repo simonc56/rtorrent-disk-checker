@@ -48,7 +48,7 @@ def send_email():
                         server = smtplib.SMTP(cfg.smtp_server, cfg.port, timeout=10)
                         server.login(cfg.account, cfg.password)
 
-                message = 'Subject: {}\n\n{}'.format(cfg.subject, 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!')
+                message = 'Subject: {}\n\n{}'.format(cfg.subject, 'Notification test from rtorrent-disk-checker. All good!')
                 server.sendmail(cfg.account, cfg.receiver, message)
                 server.quit()
                 print('Succeeded')
@@ -58,7 +58,7 @@ def send_email():
 
 def send_slack():
         slack_data = {
-                'text': 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!',
+                'text': 'Notification test from rtorrent-disk-checker. All good!',
                 'username': cfg.slack_name,
                 'icon_emoji': ':white_check_mark:'
         }
@@ -73,7 +73,7 @@ def send_slack():
 def send_telegram():
         telegram_data = {
                 'chat_id': cfg.telegram_chat_id,
-                'text': 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!'
+                'text': 'Notification test from rtorrent-disk-checker. All good!'
         }
         headers = {'content-type': 'application/json'}
         req = Request("https://api.telegram.org/bot{token}/sendMessage".format(token=cfg.telegram_token), json.dumps(telegram_data, ensure_ascii=False).encode('utf8'), headers)

@@ -122,15 +122,4 @@ labels_only = no
 exclude_unlabelled = no
 
 
-###### IMDB SECTION - IGNORE IF UNWANTED ######
-
-# The IMDB function will only execute if the torrent is attached to a label with an IMDB rule
-
-# Value Order: 1. Minimum IMDB Rating 2. Minimum Votes 3. Skip Foreign Movies (yes/no)
-
-imdb = {
-#                     'Hollywood Blockbusters' : [7, 80000, yes],
-#                     'Bollywood Classics' : [8, 60000, no],
-       }
-
 ############ USER DEFINED VARIABLES END ############
