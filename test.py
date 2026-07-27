@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 start = datetime.now()
 
@@ -167,7 +167,7 @@ try:
                 mp_required_space = torrent_size - (mp_avail_space - minimum_space)
                 quota_required_space = torrent_size - (quota_avail_space - minimum_space)
                 requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.minimum_seeders, cfg.fallback_age, cfg.fallback_ratio
-                current_date = datetime.now()
+                current_date = datetime.now(tz=timezone.utc)
                 include = override = True
                 exclude = no = False
                 mp_freed_space = quota_freed_space = count = 0
@@ -226,7 +226,7 @@ try:
                                                 del completed[0]
                                                 continue
 
-                                t_age = (current_date - datetime.utcfromtimestamp(t_age)).days
+                                t_age = (current_date - datetime.fromtimestamp(t_age, tz=timezone.utc)).days
                                 t_ratio /= 1000.0
                                 t_size_g = t_size_b / 1073741824.0
                                 t_seed = max([tracker[1] for tracker in t_tracker])

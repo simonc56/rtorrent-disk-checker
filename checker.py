@@ -3,7 +3,7 @@
 
 import sys, os, time, pprint, config as cfg
 from subprocess import Popen, check_output
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from remotecaller import xmlrpc
 
 torrent_name = sys.argv[1]
@@ -108,7 +108,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         from torrents import completed, leeching
         from mountpoints import mount_points
 
-        current_time = datetime.now()
+        current_time = datetime.now(tz=timezone.utc)
         remover = script_path + '/remover.py'
         remover_queue = script_path + '/' + torrent_hash + '.txt'
         subtractions = script_path + '/' + torrent_hash + 'sub.txt'
@@ -217,7 +217,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                                                         del completed[0]
                                                         continue
 
-                        t_age = (current_time - datetime.utcfromtimestamp(t_age)).days
+                        t_age = (current_time - datetime.fromtimestamp(t_age, tz=timezone.utc)).days
                         t_ratio /= 1000.0
                         t_size_g = t_size_b / 1073741824.0
                         t_seed = max([tracker[1] for tracker in t_tracker])
