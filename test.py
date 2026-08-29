@@ -1,20 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 start = datetime.now()
 
 import sys, os, time, smtplib, json, config as cfg
 from subprocess import check_output
 from remotecaller import xmlrpc
-
-PY2 = sys.version_info[0] == 2  # True for Python 2
-
-if PY2:
-        from urllib2 import Request, urlopen
-else:
-        from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen
 
 def disk_usage(path):
         try:
@@ -22,16 +16,6 @@ def disk_usage(path):
         except:
                 used_k = 0
         return 1024 * used_k
-
-def py2_encode(s, encoding='utf8'):
-    if PY2:
-        s = s.encode(encoding)
-    return s
-
-def py2_decode(s, encoding='utf8'):
-    if PY2:
-        s = s.decode(encoding)
-    return s
 
 def send_email():
         server = False
@@ -64,7 +48,7 @@ def send_email():
                         server = smtplib.SMTP(cfg.smtp_server, cfg.port, timeout=10)
                         server.login(cfg.account, cfg.password)
 
-                message = 'Subject: {}\n\n{}'.format(cfg.subject, 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!')
+                message = 'Subject: {}\n\n{}'.format(cfg.subject, 'Notification test from rtorrent-disk-checker. All good!')
                 server.sendmail(cfg.account, cfg.receiver, message)
                 server.quit()
                 print('Succeeded')
@@ -74,12 +58,12 @@ def send_email():
 
 def send_slack():
         slack_data = {
-                'text': 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!',
+                'text': 'Notification test from rtorrent-disk-checker. All good!',
                 'username': cfg.slack_name,
                 'icon_emoji': ':white_check_mark:'
         }
         headers = {'content-type': 'application/json'}
-        req = Request(cfg.slack_webhook_url, py2_decode(json.dumps(slack_data, ensure_ascii=False)).encode('utf8'), headers)
+        req = Request(cfg.slack_webhook_url, json.dumps(slack_data, ensure_ascii=False).encode('utf8'), headers)
         response = urlopen(req).read()
         if response.decode('utf8') != 'ok':
                 print('Failed to send slack notification, check slack_webhook_url.')
@@ -89,10 +73,10 @@ def send_slack():
 def send_telegram():
         telegram_data = {
                 'chat_id': cfg.telegram_chat_id,
-                'text': 'Notification test from RTORRENT-IMDB-DISK-CHECKER. All good!'
+                'text': 'Notification test from rtorrent-disk-checker. All good!'
         }
         headers = {'content-type': 'application/json'}
-        req = Request("https://api.telegram.org/bot{token}/sendMessage".format(token=cfg.telegram_token), py2_decode(json.dumps(telegram_data, ensure_ascii=False)).encode('utf8'), headers)
+        req = Request("https://api.telegram.org/bot{token}/sendMessage".format(token=cfg.telegram_token), json.dumps(telegram_data, ensure_ascii=False).encode('utf8'), headers)
         response = json.loads(urlopen(req).read())
         if response['ok'] != True:
                 print('Failed to send telegram notification, check token and chat_id.')
@@ -167,7 +151,7 @@ try:
                 mp_required_space = torrent_size - (mp_avail_space - minimum_space)
                 quota_required_space = torrent_size - (quota_avail_space - minimum_space)
                 requirements = cfg.minimum_size, cfg.minimum_age, cfg.minimum_ratio, cfg.minimum_seeders, cfg.fallback_age, cfg.fallback_ratio
-                current_date = datetime.now()
+                current_date = datetime.now(tz=timezone.utc)
                 include = override = True
                 exclude = no = False
                 mp_freed_space = quota_freed_space = count = 0
@@ -226,7 +210,7 @@ try:
                                                 del completed[0]
                                                 continue
 
-                                t_age = (current_date - datetime.utcfromtimestamp(t_age)).days
+                                t_age = (current_date - datetime.fromtimestamp(t_age, tz=timezone.utc)).days
                                 t_ratio /= 1000.0
                                 t_size_g = t_size_b / 1073741824.0
                                 t_seed = max([tracker[1] for tracker in t_tracker])
@@ -300,11 +284,7 @@ try:
                         if calc < 0:
                                 textfile.write('Cannot free enough space!\n')
                         for result in displayed:
-
-                                if not PY2:
-                                        textfile.write(result + '\n')
-                                else:
-                                        textfile.write(result.encode('utf8') + '\n')
+                                textfile.write(result + '\n')
 
                 print('\n===== Test for Torrent Download in %s =====\n\n%s' % (tested_path, now))
                 print('Executed in %s seconds\n%s Torrent(s) Deleted Totaling %.2f GB' % (time, count, mp_freed_space))

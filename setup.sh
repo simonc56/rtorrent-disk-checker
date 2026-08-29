@@ -24,13 +24,6 @@ grep -oP "^[^#]*scgi.* = \K.*" ~/.rtorrent.rc
 
 3b. Update the scgi variable in line 7 of config.py with your own SCGI address/port or unix socket file path.
 
-4. Python Module Installations Required for IMDB Function (Skip if Unused)
-
-4a. Enter the following commands in your terminal to install guessit and ImdbPie:
-
-pip install guessit
-pip install imdbpie
-
 COMMENT
 
 cd $(dirname "$0")
@@ -56,28 +49,6 @@ method.insert = stpcheck, simple, d.stop=, \"execute.throw.bg=python,$PWD/checke
 
 sed -i "1i\
 schedule2 = cleanup, 0, 0, \"execute.throw.bg=python,$PWD/cleaner.py\"" $rtorrent
-
-printf '\nWill you be using the IMDB function of the script [Y]/[N]?: '
-
-while true; do
-    read answer
-    case $answer in
-
-        [yY] )
-                 pip install imdbpie -q && printf '\nimdbpie installed\n' || sudo pip install imdbpie -q && printf '\nimdbpie installed\n' || printf '\n\033[0;36mFailed to install Python module: imdbpie\033[0m\n\n'
-                 pip install guessit -q && printf '\nguessit installed\n' || sudo pip install guessit -q && printf '\nguessit installed\n' || printf '\n\033[0;36mFailed to install Python module: guessit\033[0m\n'
-                 break
-                 ;;
-
-        [nN] )
-                 break
-                 ;;
-
-        * )
-              printf '\nEnter [Y] or [N]: '
-              ;;
-    esac
-done
 
 scgi=$(grep -oP "^[^#]*scgi.* = \K.*" $rtorrent)
 

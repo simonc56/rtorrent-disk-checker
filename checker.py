@@ -3,7 +3,7 @@
 
 import sys, os, time, pprint, config as cfg
 from subprocess import Popen, check_output
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from remotecaller import xmlrpc
 
 torrent_name = sys.argv[1]
@@ -19,50 +19,6 @@ def disk_usage(path):
         except:
                 used_k = 0
         return 1024 * used_k
-
-def imdb_search():
-
-        try:
-                from threading import Thread
-                from guessit import guessit
-                from imdbpie import Imdb
-
-                def imdb_ratings():
-                        ratings.update(imdb.get_title_ratings(movie_imdb))
-
-                def movie_country():
-                        country.extend(imdb.get_title_versions(movie_imdb)['origins'])
-
-                imdb = Imdb()
-                torrent_info = guessit(torrent_name)
-                movie_title = torrent_info['title'] + ' ' + str(torrent_info['year'])
-                movie_imdb = imdb.search_for_title(movie_title)[0]['imdb_id']
-
-                ratings = {}
-                country = []
-                t1 = Thread(target=movie_country)
-                t2 = Thread(target=imdb_ratings)
-                t1.start()
-                t2.start()
-                t1.join()
-                t2.join()
-        except:
-                return
-
-        rating = ratings['rating']
-        votes = ratings['ratingCount']
-
-        if rating < minimum_rating or votes < minimum_votes:
-                xmlrpc('d.erase', (torrent_hash,))
-                sys.exit()
-
-        if skip_foreign and 'US' not in country:
-                xmlrpc('d.erase', (torrent_hash,))
-                sys.exit()
-
-if torrent_label in cfg.imdb:
-        minimum_rating, minimum_votes, skip_foreign = cfg.imdb[torrent_label]
-        imdb_search()
 
 if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         script_path = os.path.dirname(sys.argv[0])
@@ -108,7 +64,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
         from torrents import completed, leeching
         from mountpoints import mount_points
 
-        current_time = datetime.now()
+        current_time = datetime.now(tz=timezone.utc)
         remover = script_path + '/remover.py'
         remover_queue = script_path + '/' + torrent_hash + '.txt'
         subtractions = script_path + '/' + torrent_hash + 'sub.txt'
@@ -217,7 +173,7 @@ if cfg.enable_disk_check and not is_meta and torrent_label != 'bypass':
                                                         del completed[0]
                                                         continue
 
-                        t_age = (current_time - datetime.utcfromtimestamp(t_age)).days
+                        t_age = (current_time - datetime.fromtimestamp(t_age, tz=timezone.utc)).days
                         t_ratio /= 1000.0
                         t_size_g = t_size_b / 1073741824.0
                         t_seed = max([tracker[1] for tracker in t_tracker])
